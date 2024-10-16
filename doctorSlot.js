@@ -160,8 +160,7 @@ const cancelBooking = async (doctorName, date, timeSlot, userName) => {
 };
 
 const date = "2024-10-22"; 
-// createTimeSlotsWithInterval("Dr. Arul", date, 9, 18, 1);
-
+createTimeSlotsWithInterval("Dr. Arul", date, 9, 18, 1);
 // bookDoctorSlot("Dr. Arul", date, { startTime: "10:00", endTime: "11:00" }, "Deepak");
 // listAvailableSlots("Dr. Arul", date);
 // cancelBooking("Dr. Arul", date, { startTime: "10:00", endTime: "11:00" }, "Deepak");
