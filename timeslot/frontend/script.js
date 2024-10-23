@@ -108,33 +108,6 @@ const populateAvailableSlots = (section) => {
     }
 };
 
-const createDoctor = () => {
-    const doctorName = document.getElementById('doctorName').value;
-    const doctorEmail = document.getElementById('doctorEmail').value;
-    const doctorPassword = document.getElementById('doctorPassword').value;
-    const doctorRole = document.getElementById('doctorRole').value;
-
-    if (!doctorName || !doctorEmail || !doctorPassword || !doctorRole) {
-        document.getElementById('createDoctorOutput').innerText = 'Please fill in all fields.';
-        return;
-    }
-
-    const doctorCredentials = {
-        doctorName: doctorName,
-        doctorEmail: doctorEmail,
-        doctorPassword: doctorPassword,
-        role: doctorRole,
-    };
-
-    doctors.push(doctorCredentials);
-    localStorage.setItem('doctorCredentials', JSON.stringify(doctors)); 
-    document.getElementById('createDoctorOutput').innerText = 'Doctor created successfully!';
-
-    document.getElementById('doctorName').value = '';
-    document.getElementById('doctorEmail').value = '';
-    document.getElementById('doctorPassword').value = '';
-};
-
 const createTimeSlots = () => {
     const doctorName = document.getElementById('doctorName').value;
     const date = document.getElementById('date').value;
@@ -356,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 const showLogin = () => {
-    window.location.href = './login/login.html'; 
+    window.location.href = '../timeslot/frontend/login/login.html'; 
 };
 
 const logout = () => {
@@ -364,9 +337,7 @@ const logout = () => {
     
     document.getElementById('loginButtonContainer').style.display = 'block';
     document.getElementById('logoutButtonContainer').style.display = 'none';
-    // window.location.reload();
-    window.location.href = '../timeslot/login/login.html';
-
+    window.location.reload();
 };
 
 loadDoctorsFromStorage();

@@ -16,7 +16,7 @@ const loginUser = () => {
 
     if (user) {
         localStorage.setItem('loggedInUser', email); 
-        localStorage.setItem('loggedInUserName', user.name); 
+        localStorage.setItem('loggedInUserName', user.username); 
         window.location.href = "/timeslot/index.html"; 
     } else {
         alert('Invalid email or password.');
