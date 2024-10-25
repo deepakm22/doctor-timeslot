@@ -1,33 +1,3 @@
-let doctors = [];
-
-const loadDoctorsFromStorage = () => {
-    const storedDoctors = localStorage.getItem('doctors');
-    if (storedDoctors) {
-        doctors = JSON.parse(storedDoctors);
-        console.log('Loaded doctors:', doctors);
-        markPastSlotsAsUnavailable();
-    }
-};
-
-const saveDoctorsToStorage = () => {
-    localStorage.setItem('doctors', JSON.stringify(doctors));
-};
-
-const markPastSlotsAsUnavailable = () => {
-    const currentDate = new Date(); 
-
-    doctors.forEach(doctor => {
-        doctor.timeSlots.forEach(slot => {
-            const slotDate = new Date(slot.date); 
-            if (slotDate < currentDate) {
-                slot.isAvailable = false; 
-            }
-        });
-    });
-
-    saveDoctorsToStorage(); 
-};
-
 const showSection = (sectionId) => {
     const sections = document.querySelectorAll('.section');
     sections.forEach(section => section.classList.remove('active'));
@@ -49,160 +19,271 @@ const showSection = (sectionId) => {
     }
 };
 
-const populateDoctorDropdowns = () => {
-    const bookDoctorSelect = document.getElementById('bookDoctorName');
-    const cancelDoctorSelect = document.getElementById('cancelDoctorName');
+// const createTimeSlots = async () => {
+//     const doctorName = document.getElementById('doctorName').value.trim();
+//     const date = document.getElementById('date').value;
+//     const startHour = parseFloat(document.getElementById('startHour').value);
+//     const endHour = parseFloat(document.getElementById('endHour').value);
+//     const interval = parseFloat(document.getElementById('interval').value);
 
-    bookDoctorSelect.innerHTML = '';
-    cancelDoctorSelect.innerHTML = '';
+//     if (!doctorName || !date || isNaN(startHour) || isNaN(endHour) || isNaN(interval) || endHour <= startHour) {
+//         document.getElementById('createOutput').innerText = 'Please fill in all fields correctly.';
+//         return;
+//     }
 
-    doctors.forEach(doctor => {
-        const option = document.createElement('option');
-        option.value = doctor.doctorName;
-        option.textContent = doctor.doctorName;
+//     try {
+//         const response = await fetch('http://localhost:3000/api/doctor/createSlot', {
+//             method: 'POST',
+//             headers: {
+//                 'Content-Type': 'application/json',
+//                 'Authorization': `Bearer ${localStorage.getItem('token')}`, 
+//             },
+//             body: JSON.stringify({
+//                 doctorName,
+//                 date,
+//                 startTime: startHour,
+//                 endTime: endHour,
+//                 interval,
+//             }),
+//         });
 
-        bookDoctorSelect.appendChild(option);
-        cancelDoctorSelect.appendChild(option.cloneNode(true));
-    });
+//         if (!response.ok) {
+//             const errorText = await response.text();
+//             throw new Error(`Error: ${response.status} - ${errorText}`);
+//         }
 
-    if (bookDoctorSelect.value) {
-        populateAvailableSlots('book');
-    }
-    if (cancelDoctorSelect.value) {
-        populateAvailableSlots('cancel');
+//         const data = await response.json();
+//         document.getElementById('createOutput').innerText = data.message || 'Time slots created successfully!';
+
+//         document.getElementById('doctorName').value = '';
+//         document.getElementById('date').value = '';
+//         document.getElementById('startHour').value = '';
+//         document.getElementById('endHour').value = '';
+//         document.getElementById('interval').value = '';
+
+//         showModal('Time slots created successfully!');
+//     } catch (error) {
+//         console.error('Error:', error);
+//         document.getElementById('createOutput').innerText = 'An error occurred while creating time slots: ' + error.message;
+//     }
+// };
+
+// const showModal = (message) => {
+//     const modal = document.getElementById('successModal');
+//     const modalMessage = document.getElementById('modalMessage');
+    
+//     modalMessage.innerText = message;
+//     modal.style.display = 'block';
+// };
+
+// const closeModal = () => {
+//     const modal = document.getElementById('successModal');
+//     modal.style.display = 'none';
+// };
+
+const viewTimeSlots = async () => {
+    const doctorName = document.getElementById('viewDoctorName').value;
+    const date = document.getElementById('viewDate').value;
+
+    const output = document.getElementById('viewOutput');
+    output.innerHTML = ''; 
+
+    try {
+        const queryParams = new URLSearchParams({
+            doctorName: doctorName,
+            date: date,
+        });
+
+        const response = await fetch(`http://localhost:3000/api/doctor/getSingleSlot?${queryParams.toString()}`, {
+            method: 'GET', 
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, 
+            }
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text(); 
+            throw new Error(`Error: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json(); 
+        const availableSlots = data.result.filter(slot => slot.isAvailable); 
+
+        if (availableSlots.length > 0) {
+            availableSlots.forEach(slot => {
+                const slotButton = document.createElement('button');
+                slotButton.classList.add('slot-button');
+                slotButton.textContent = `${slot.startTime} to ${slot.endTime} (Available)`;
+                slotButton.style.backgroundColor = '#4CAF50'; 
+
+                slotButton.addEventListener('click', () => {
+                    console.log(`Booking ${doctorName} on ${date} from ${slot.startTime} to ${slot.endTime}`);
+                });
+
+                output.appendChild(slotButton); 
+            });
+        } else {
+            output.innerHTML = 'No available slots for this doctor on this date.';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        output.innerHTML = 'An error occurred while fetching slots: ' + error.message; 
     }
 };
 
-const populateAvailableSlots = (section) => {
-    const doctorName = section === 'book' ? document.getElementById('bookDoctorName').value : document.getElementById('cancelDoctorName').value;
-    const date = section === 'book' ? document.getElementById('bookDate').value : document.getElementById('cancelDate').value;
-    const timeSlotSelect = section === 'book' ? document.getElementById('bookTimeSlot') : document.getElementById('cancelTimeSlot');
+const viewAllTimeSlots = async () => {
+    const date = document.getElementById('viewAllDate').value.trim(); 
 
-    timeSlotSelect.innerHTML = '';
+    const output = document.getElementById('allSlotsOutput');
+    output.innerHTML = ''; 
 
-    console.log('Selected Doctor:', doctorName);
-    console.log('Selected Date:', date);
+    if (!date) { 
+        console.error('Date is required to fetch slots.');
+        output.innerHTML = 'Please select a date to view available time slots.';
+        return; 
+    }
 
-    const doctor = doctors.find(d => d.doctorName === doctorName);
-    if (doctor && date) {
-        const availableSlots = section === 'book' 
-            ? doctor.timeSlots.filter(slot => slot.date === date && slot.isAvailable)
-            : doctor.timeSlots.filter(slot => slot.date === date && !slot.isAvailable);
+    try {
+        const queryParams = new URLSearchParams({ date }); 
+        console.log('Fetching time slots with query params:', queryParams.toString()); 
+        
+        const response = await fetch(`http://localhost:3000/api/doctor/getAllSlot?${queryParams.toString()}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`, 
+            },
+        });
 
-        console.log('Available Slots:', availableSlots);
+        console.log('Response status:', response.status); 
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json(); 
+        console.log('Response data:', data);
+
+        const doctors = data.result; 
+        console.log("testing",doctors);
+        
+
+        if (doctors && doctors.length > 0) {  
+            doctors.forEach(doctor => {
+                output.innerHTML += `<h3>Dr. ${doctor.doctorName}</h3>`; 
+
+                if (doctor.timeSlots && doctor.timeSlots.length > 0) { 
+                    doctor.timeSlots.forEach(slot => {
+                        const slotButton = document.createElement('button');
+                        slotButton.classList.add('slot-button');
+                        slotButton.textContent = `${slot.date}: ${slot.startTime} to ${slot.endTime}  ${slot.isAvailable ? 'Available' : 'Booked'}`;
+                        slotButton.disabled = !slot.isAvailable; 
+                        slotButton.style.backgroundColor = slot.isAvailable ? '#4CAF50' : 'rgb(201, 198, 198)'; 
+            
+                        if (slot.isAvailable) {
+                            slotButton.addEventListener('click', () => {
+                                console.log(`Booking ${doctor.doctorName} on ${slot.date} from ${slot.startTime} to ${slot.endTime}`);
+                            });
+                        }
+
+                        output.appendChild(slotButton); 
+                    });
+                } else {
+                    output.innerHTML += `<p>No available time slots for Dr. ${doctor.doctorName} on this date.</p>`;
+                }
+            });
+        } else {
+            output.innerHTML = 'No doctors available for the selected date.';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        output.innerHTML = 'An error occurred while fetching time slots: ' + error.message; 
+    }
+};
+
+const fetchAllDoctors =  async () => {
+    try {
+        const response = await fetch('http://localhost:3000/api/doctor/listAllDoctors', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}` 
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            return data.result
+        } else {
+            console.error('Error fetching doctors:', data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+const loadDoctors = async () => {
+    const doctors = await fetchAllDoctors();
+    const doctorDropdown = document.getElementById('bookDoctorName');
+    const cancelDoctorDropdown = document.getElementById('cancelDoctorName');
+    
+    if (doctors) {
+        if (doctorDropdown) {
+            doctorDropdown.innerHTML = '<option value="">Select a doctor</option>';
+            doctors.forEach(doctor => {
+                const option = document.createElement('option');
+                option.value = doctor.doctorName; 
+                option.text = doctor.doctorName;
+                doctorDropdown.appendChild(option);
+            });
+        }
+
+        if (cancelDoctorDropdown) {
+            cancelDoctorDropdown.innerHTML = '<option value="">Select a doctor</option>';
+            doctors.forEach(doctor => {
+                const option = document.createElement('option');
+                option.value = doctor.doctorName; 
+                option.text = doctor.doctorName;
+                cancelDoctorDropdown.appendChild(option);
+            });
+        }
+    }
+};
+
+const loadTimeSlots = async (isCancel = false) => {
+    const selectedDoctor = isCancel ? document.getElementById('cancelDoctorName').value : document.getElementById('bookDoctorName').value;
+    const selectedDate = isCancel ? document.getElementById('cancelDate').value : document.getElementById('bookDate').value;
+
+    const doctors = await fetchAllDoctors();
+    const doctor = doctors.find(doc => doc.doctorName === selectedDoctor);
+    
+    const timeSlotDropdown = isCancel ? document.getElementById('cancelTimeSlot') : document.getElementById('bookTimeSlot');
+    timeSlotDropdown.innerHTML = '<option value="">Select a time slot</option>';
+
+    if (doctor) {
+        const availableSlots = doctor.timeSlots.filter(slot => 
+            slot.date === selectedDate && (isCancel ? !slot.isAvailable : slot.isAvailable)
+        );
 
         availableSlots.forEach(slot => {
             const option = document.createElement('option');
-            option.value = slot.startTime;
-            option.textContent = `${slot.startTime} to ${slot.endTime}`;
-            timeSlotSelect.appendChild(option);
+            option.value = `${slot.startTime}`; 
+            option.text = `${slot.startTime}:00 - ${slot.endTime}:00`; 
+            timeSlotDropdown.appendChild(option);
         });
-
-        if (availableSlots.length === 0) {
-            const option = document.createElement('option');
-            option.textContent = section === 'book' ? 'No available slots' : 'No booked slots to cancel';
-            timeSlotSelect.appendChild(option);
-        }
-    } else {
-        console.log('Doctor not found or date not selected.');
     }
 };
 
-const createTimeSlots = () => {
-    const doctorName = document.getElementById('doctorName').value;
-    const date = document.getElementById('date').value;
-    const startHour = parseFloat(document.getElementById('startHour').value);
-    const endHour = parseFloat(document.getElementById('endHour').value);
-    const interval = parseFloat(document.getElementById('interval').value);
+document.addEventListener('DOMContentLoaded', loadDoctors);
+document.getElementById('bookDoctorName').addEventListener('change', () => loadTimeSlots());
+document.getElementById('bookDate').addEventListener('change', () => loadTimeSlots());
+document.getElementById('cancelDoctorName').addEventListener('change', () => loadTimeSlots(true));
+document.getElementById('cancelDate').addEventListener('change', () => loadTimeSlots(true));
 
-    if (!doctorName || !date || isNaN(startHour) || isNaN(endHour) || isNaN(interval) || endHour <= startHour) {
-        document.getElementById('createOutput').innerText = 'Please fill in all fields correctly.';
-        return;
-    }
-
-    let timeSlots = [];
-    for (let hour = startHour; hour < endHour; hour += interval) {
-        timeSlots.push({
-            startTime: hour,
-            endTime: hour + interval,
-            date: date,
-            isAvailable: true
-        });
-    }
-
-    const existingDoctor = doctors.find(doctor => doctor.doctorName === doctorName);
-    if (existingDoctor) {
-        existingDoctor.timeSlots.push(...timeSlots);
-    } else {
-        doctors.push({ doctorName: doctorName, timeSlots: timeSlots });
-    }
-
-    saveDoctorsToStorage();
-    markPastSlotsAsUnavailable();
-    document.getElementById('createOutput').innerText = 'Time slots created successfully!';
-    document.getElementById('doctorName').value = '';
-    document.getElementById('date').value = '';
-    document.getElementById('startHour').value = '';
-    document.getElementById('endHour').value = '';
-    document.getElementById('interval').value = '';};
-
-    const viewTimeSlots = () => {
-        const doctorName = document.getElementById('viewDoctorName').value;
-        const date = document.getElementById('viewDate').value;
-    
-        const output = document.getElementById('viewOutput');
-        output.innerHTML = ''; 
-    
-        const doctor = doctors.find(d => d.doctorName === doctorName);
-        if (doctor) {
-            const availableSlots = doctor.timeSlots.filter(slot => slot.date === date && slot.isAvailable);
-            if (availableSlots.length > 0) {
-                availableSlots.forEach(slot => {
-                    const slotButton = document.createElement('button');
-                    slotButton.classList.add('slot-button');
-                    slotButton.textContent = `${slot.startTime} to ${slot.endTime} (Avilable)`;
-                    slotButton.style.backgroundColor = '#4CAF50'; 
-    
-                    slotButton.addEventListener('click', () => {
-                        console.log(`Booking ${doctor.doctorName} on ${slot.date} from ${slot.startTime} to ${slot.endTime}`);
-                    });
-    
-                    output.appendChild(slotButton);
-                });
-            } else {
-                output.innerHTML = 'No available slots for this doctor on this date.';
-            }
-        } else {
-            output.innerHTML = 'Doctor not found.';
-        }
-    };
-
-const viewAllTimeSlots = () => {
-    const output = document.getElementById('allSlotsOutput');
-    output.innerHTML = '';
-
-    doctors.forEach(doctor => {
-        output.innerHTML += `<h3>Dr. ${doctor.doctorName}</h3>`;
-
-        doctor.timeSlots.forEach(slot => {
-            const slotButton = document.createElement('button');
-            slotButton.classList.add('slot-button');
-            slotButton.textContent = `${slot.date}: ${slot.startTime} to ${slot.endTime}  ${slot.isAvailable ? 'Available' : 'Booked'}`;
-            slotButton.disabled = !slot.isAvailable; 
-            slotButton.style.backgroundColor = slot.isAvailable ? '#4CAF50' : 'rgb(201, 198, 198)'; 
-
-            if (slot.isAvailable) {
-                slotButton.addEventListener('click', () => {
-                    console.log(`Booking ${doctor.doctorName} on ${slot.date} from ${slot.startTime} to ${slot.endTime}`);
-                });
-            }
-
-            output.appendChild(slotButton);
-        });
-    });
-};
-
-const bookSlot = () => {
+const bookSlot = async () => {
     const doctorName = document.getElementById('bookDoctorName').value;
     const date = document.getElementById('bookDate').value;
     const startTime = document.getElementById('bookTimeSlot').value;
@@ -213,33 +294,57 @@ const bookSlot = () => {
         return;
     }
 
-    const doctor = doctors.find(d => d.doctorName === doctorName);
-    if (doctor) {
-        console.log('Booking Doctor:', doctorName);
-        console.log('Selected Date:', date);
-        console.log('Selected Start Time:', startTime);
+    else if (!startTime ) {
+        document.getElementById('bookOutput').innerText = 'Please select a valid time slot.';
+        return;
+    }else{
 
-        const slot = doctor.timeSlots.find(s => s.startTime.toString() === startTime && s.date === date);
+
+    console.log('Doctor Name:', doctorName);
+    console.log('Date:', date);
+    console.log('Selected Time Slot:', startTime);
+    console.log('User Name:', userName);
+
+
+
+    try {
         
-        if (slot && slot.isAvailable) {
-            slot.isAvailable = false; 
-            slot.bookedBy = userName; 
-            saveDoctorsToStorage(); 
-            document.getElementById('bookOutput').innerText = 'Slot booked successfully!';
+        const response = await fetch('http://localhost:3000/api/doctor/bookSlot', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,  
+            },
+            body: JSON.stringify({
+                doctorName,
+                date,
+                timeSlot: startTime,
+                username: userName
+            }),
+        });
+        const data = await response.json();
+        console.log("Response Data:", data);        
+        
+        if (response.ok) {
+            document.getElementById('bookOutput').innerText = data.message || 'Slot booked successfully!';
 
             document.getElementById('bookDoctorName').value = '';
             document.getElementById('bookDate').value = '';
-            document.getElementById('bookTimeSlot').innerHTML = ''; 
+            document.getElementById('bookTimeSlot').value = '';
             document.getElementById('userName').value = '';
         } else {
-            document.getElementById('bookOutput').innerText = 'Slot is already booked or does not exist.';
+            console.error(`Failed booking attempt: Status ${response.status}`, data); 
+
+            document.getElementById('bookOutput').innerText = data.message || 'Failed to book slot.';
         }
-    } else {
-        document.getElementById('bookOutput').innerText = 'Doctor not found.';
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('bookOutput').innerText = 'An error occurred while booking the slot.';
     }
+}
 };
 
-const cancelBooking = () => {
+const cancelBooking = async () => {
     const doctorName = document.getElementById('cancelDoctorName').value;
     const date = document.getElementById('cancelDate').value;
     const startTime = document.getElementById('cancelTimeSlot').value;
@@ -248,98 +353,122 @@ const cancelBooking = () => {
     if (!userName) {
         document.getElementById('cancelOutput').innerText = 'Please enter your name.';
         return;
+    } else if (!startTime) {
+        document.getElementById('cancelOutput').innerText = 'Please select a valid time slot.';
+        return;
     }
 
-    const doctor = doctors.find(d => d.doctorName === doctorName);
-    if (doctor) {
-        const slot = doctor.timeSlots.find(s => s.startTime.toString() === startTime && s.date === date);
-        console.log('Cancel Booking - Slot Found:', slot); 
+    console.log('Doctor Name:', doctorName,typeof(doctorName));
+    console.log('Date:', date,typeof(date));
+    console.log('Selected Time Slot:', startTime, typeof(startTime));
+    console.log('User Name:', userName, typeof(userName));
 
-        if (slot && !slot.isAvailable && slot.bookedBy === userName) {
-            slot.isAvailable = true; 
-            delete slot.bookedBy; 
-            saveDoctorsToStorage();
-            document.getElementById('cancelOutput').innerText = 'Booking canceled successfully!';
+    try {
+        const response = await fetch('http://localhost:3000/api/doctor/cancelBooking', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify({
+                doctorName,
+                date,
+                startTime: startTime,
+                username: userName
+            }),
+        });
+
+        const data = await response.json();
+        console.log("Response Data:", data);        
+
+        if (response.ok) {
+            document.getElementById('cancelOutput').innerText = data.message || 'Slot canceled successfully!';
 
             document.getElementById('cancelDoctorName').value = '';
             document.getElementById('cancelDate').value = '';
-            document.getElementById('cancelTimeSlot').innerHTML = ''; 
+            document.getElementById('cancelTimeSlot').value = '';
             document.getElementById('cancelUserName').value = '';
         } else {
-            document.getElementById('cancelOutput').innerText = 'No booking found for this slot or you are not authorized to cancel it.';
+            console.error(`Failed cancel attempt: Status ${response.status}`, data);
+            document.getElementById('cancelOutput').innerText = data.message || 'Failed to cancel slot.';
         }
-    } else {
-        document.getElementById('cancelOutput').innerText = 'Doctor not found.';
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('cancelOutput').innerText = 'An error occurred while canceling the appointment.';
     }
 };
 
-const viewAllBookedSlotsForAdmin = () => {
-    const output = document.getElementById('adminBookedSlotsOutput');
-    output.innerHTML = ''; 
 
-    let hasBookedSlots = false; 
+// const cancelBooking = async () => {
+//     const doctorName = document.getElementById('cancelDoctorName').value;
+//     const date = document.getElementById('cancelDate').value;
+//     const startTime = document.getElementById('cancelTimeSlot').value;
+//     const userName = document.getElementById('cancelUserName').value;
 
-    doctors.forEach(doctor => {
-        doctor.timeSlots.forEach(slot => {
-            if (!slot.isAvailable && slot.bookedBy) {
-                hasBookedSlots = true;
+//     if (!userName) {
+//         document.getElementById('cancelOutput').innerText = 'Please enter your name.';
+//         return;
+//     }
 
-                const bookedInfo = document.createElement('div');
-                bookedInfo.classList.add('booked-slot-info');
+//     try {
+//         const response = await fetch('http://localhost:3000/api/doctor/cancelBooking', {
+//             method: 'POST',
+//             headers: {
+//                 'Content-Type': 'application/json',
+//             },
+//             body: JSON.stringify({ doctorName, date, startTime, username: userName }),
+//         });
 
-                bookedInfo.innerHTML = `
-                    <h4>Doctor: Dr. ${doctor.doctorName}</h4>
-                    <p>Date: ${slot.date}</p>
-                    <p>Time: ${slot.startTime} to ${slot.endTime}</p>
-                    <p>Booked By: ${slot.bookedBy}</p>
-                `;
+//         const data = await response.json();
 
-                output.appendChild(bookedInfo);
-            }
-        });
-    });
+//         if (response.ok) {
+//             document.getElementById('cancelOutput').innerText = data.message;
+//         } else {
+//             document.getElementById('cancelOutput').innerText = data.message;
+//         }
+//     } catch (error) {
+//         console.error('Error:', error);
+//         document.getElementById('cancelOutput').innerText = 'An error occurred while canceling the booking.';
+//     }
+// };
 
-    if (!hasBookedSlots) {
-        output.innerHTML = 'No booked slots available.';
-    }
-};
+const updateLoginStatus = () => {
+    const isLoggedIn = !!localStorage.getItem('token'); 
+    const loginButtonContainer = document.getElementById('loginButtonContainer');
+    const logoutButtonContainer = document.getElementById('logoutButtonContainer');
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadDoctorsFromStorage(); 
-    populateDoctorDropdowns(); 
-
-    const loggedInUser = localStorage.getItem('loggedInUser'); 
-    const loggedInUserName = localStorage.getItem('loggedInUserName'); 
-
-    const userInfo = document.getElementById('userInfo'); 
-    const usernameDisplay = document.getElementById('usernameDisplay'); 
-
-    if (loggedInUser && loggedInUserName) {
-        document.getElementById('loginButtonContainer').style.display = 'none';
-        document.getElementById('logoutButtonContainer').style.display = 'block';
-        usernameDisplay.innerText = `Welcome, ${loggedInUserName}`; 
-
-        userInfo.style.display = 'flex'; 
+    if (isLoggedIn) {
+        loginButtonContainer.style.display = 'none';
+        logoutButtonContainer.style.display = 'block';
     } else {
-        document.getElementById('loginButtonContainer').style.display = 'block';
-        document.getElementById('logoutButtonContainer').style.display = 'none';
-        usernameDisplay.innerText = ''; 
+        loginButtonContainer.style.display = 'block';
+        logoutButtonContainer.style.display = 'none';
     }
-});
-
-
-const showLogin = () => {
-    window.location.href = '../timeslot/frontend/login/login.html'; 
 };
 
 const logout = () => {
-    localStorage.removeItem('loggedInUser');
-    
-    document.getElementById('loginButtonContainer').style.display = 'block';
-    document.getElementById('logoutButtonContainer').style.display = 'none';
-    window.location.reload();
+    localStorage.removeItem('token');
+    localStorage.removeItem('loggedInUserName');
+
+    updateLoginStatus();
+
+    window.location.href = '/timeslot/frontend/login/login.html'; 
 };
 
-loadDoctorsFromStorage();
+updateLoginStatus();
+
+const showLogin = () => {
+    window.location.href = '/timeslot/frontend/login/login.html'; 
+};
+
+const displayStoredUsername = () => {
+    const usernameDisplayElement = document.getElementById('usernameDisplay');
+    const storedUsername = localStorage.getItem('loggedInUserName');
+
+    if (storedUsername && usernameDisplayElement) {
+        usernameDisplayElement.textContent = `Welcome, ${storedUsername}!`;
+    }
+};
 
 
+displayStoredUsername();

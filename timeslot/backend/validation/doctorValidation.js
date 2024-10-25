@@ -62,16 +62,16 @@ const bookSlotSchema = Joi.object({
     })
 });
 
-const viewAllBookedAppointmentsSchema = Joi.object({
-    doctorName: Joi.string().required().messages({
-        'string.base': '"doctorName" should be a type of "text"',
-        'any.required': '"doctorName" is a required field'
-    }),
-    date: Joi.date().iso().required().messages({
-        'date.base': '"date" should be a valid date',
-        'any.required': '"date" is a required field'
-    })
-});
+// const viewAllBookedAppointmentsSchema = Joi.object({
+//     doctorName: Joi.string().required().messages({
+//         'string.base': '"doctorName" should be a type of "text"',
+//         'any.required': '"doctorName" is a required field'
+//     }),
+//     date: Joi.date().iso().required().messages({
+//         'date.base': '"date" should be a valid date',
+//         'any.required': '"date" is a required field'
+//     })
+// });
 
 
 module.exports = { createSlotSchema, viewDoctorSlotsSchema, viewAllSlotsSchema, bookSlotSchema };

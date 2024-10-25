@@ -28,16 +28,43 @@ const validationMiddleware = (req, res, next) => {
     }
 
     if (schema) {
-    const { error } = schema.validate(req.body);
-    if (error) {
-        return res.status(400).json({
-        result: {},
-        message: error.details[0].message,
-        status: 'error',
-        responseCode: 400,
-        });
+        if (schema === viewDoctorSlotsSchema){
+            const { error } = schema.validate(req.query);
+            if (error) {
+                return res.status(400).json({
+                result: {},
+                message: error.details[0].message,
+                status: 'error',
+                responseCode: 400,
+                });
+            }
+        }
+        else if (schema === viewAllSlotsSchema){
+            const { error } = schema.validate(req.query);
+            if (error) {
+                return res.status(400).json({
+                result: {},
+                message: error.details[0].message,
+                status: 'error',
+                responseCode: 400,
+                });
+            }
+        }
+        else{
+            const { error } = schema.validate(req.body);
+            if (error) {
+                return res.status(400).json({
+                result: {},
+                message: error.details[0].message,
+                status: 'error',
+                responseCode: 400,
+                });
+            }
+        }
+
     }
-    }
+
+
     next(); 
 };
 

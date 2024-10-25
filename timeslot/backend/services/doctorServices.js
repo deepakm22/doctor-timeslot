@@ -145,5 +145,17 @@ const cancelBookingServices = async (doctorName, date, startTime, username) => {
     return slot; 
 };
 
+const listAllDoctorsServices = async () => {
+    const doctors = await doctorSchema.find({}); 
+    console.log(doctors); 
+    if (doctors.length === 0) {
+        throw new Error('No doctors found');
+    }
+    return doctors;
+};
 
-module.exports = { createTimeSlotServices ,viewDoctorSlotsServices , viewAllSlotsServices, bookSlotServices, viewAllBookedAppointmentsServices, cancelBookingServices};
+
+
+
+
+module.exports = { createTimeSlotServices ,viewDoctorSlotsServices , viewAllSlotsServices, bookSlotServices, viewAllBookedAppointmentsServices, cancelBookingServices, listAllDoctorsServices};
