@@ -97,7 +97,6 @@ const viewMyAppointment = async () => {
     }
 }
 
-
 const updateLoginStatus = () => {
     const isLoggedIn = !!localStorage.getItem('token'); 
     const loginButtonContainer = document.getElementById('loginButtonContainer');
@@ -135,6 +134,5 @@ const displayStoredUsername = () => {
         usernameDisplayElement.textContent = `Welcome, ${storedUsername}!`;
     }
 };
-
 
 displayStoredUsername();

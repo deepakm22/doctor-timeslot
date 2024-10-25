@@ -19,68 +19,6 @@ const showSection = (sectionId) => {
     }
 };
 
-// const createTimeSlots = async () => {
-//     const doctorName = document.getElementById('doctorName').value.trim();
-//     const date = document.getElementById('date').value;
-//     const startHour = parseFloat(document.getElementById('startHour').value);
-//     const endHour = parseFloat(document.getElementById('endHour').value);
-//     const interval = parseFloat(document.getElementById('interval').value);
-
-//     if (!doctorName || !date || isNaN(startHour) || isNaN(endHour) || isNaN(interval) || endHour <= startHour) {
-//         document.getElementById('createOutput').innerText = 'Please fill in all fields correctly.';
-//         return;
-//     }
-
-//     try {
-//         const response = await fetch('http://localhost:3000/api/doctor/createSlot', {
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//                 'Authorization': `Bearer ${localStorage.getItem('token')}`, 
-//             },
-//             body: JSON.stringify({
-//                 doctorName,
-//                 date,
-//                 startTime: startHour,
-//                 endTime: endHour,
-//                 interval,
-//             }),
-//         });
-
-//         if (!response.ok) {
-//             const errorText = await response.text();
-//             throw new Error(`Error: ${response.status} - ${errorText}`);
-//         }
-
-//         const data = await response.json();
-//         document.getElementById('createOutput').innerText = data.message || 'Time slots created successfully!';
-
-//         document.getElementById('doctorName').value = '';
-//         document.getElementById('date').value = '';
-//         document.getElementById('startHour').value = '';
-//         document.getElementById('endHour').value = '';
-//         document.getElementById('interval').value = '';
-
-//         showModal('Time slots created successfully!');
-//     } catch (error) {
-//         console.error('Error:', error);
-//         document.getElementById('createOutput').innerText = 'An error occurred while creating time slots: ' + error.message;
-//     }
-// };
-
-// const showModal = (message) => {
-//     const modal = document.getElementById('successModal');
-//     const modalMessage = document.getElementById('modalMessage');
-    
-//     modalMessage.innerText = message;
-//     modal.style.display = 'block';
-// };
-
-// const closeModal = () => {
-//     const modal = document.getElementById('successModal');
-//     modal.style.display = 'none';
-// };
-
 const viewTimeSlots = async () => {
     const doctorName = document.getElementById('viewDoctorName').value;
     const date = document.getElementById('viewDate').value;
@@ -397,40 +335,6 @@ const cancelBooking = async () => {
         document.getElementById('cancelOutput').innerText = 'An error occurred while canceling the appointment.';
     }
 };
-
-
-// const cancelBooking = async () => {
-//     const doctorName = document.getElementById('cancelDoctorName').value;
-//     const date = document.getElementById('cancelDate').value;
-//     const startTime = document.getElementById('cancelTimeSlot').value;
-//     const userName = document.getElementById('cancelUserName').value;
-
-//     if (!userName) {
-//         document.getElementById('cancelOutput').innerText = 'Please enter your name.';
-//         return;
-//     }
-
-//     try {
-//         const response = await fetch('http://localhost:3000/api/doctor/cancelBooking', {
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//             },
-//             body: JSON.stringify({ doctorName, date, startTime, username: userName }),
-//         });
-
-//         const data = await response.json();
-
-//         if (response.ok) {
-//             document.getElementById('cancelOutput').innerText = data.message;
-//         } else {
-//             document.getElementById('cancelOutput').innerText = data.message;
-//         }
-//     } catch (error) {
-//         console.error('Error:', error);
-//         document.getElementById('cancelOutput').innerText = 'An error occurred while canceling the booking.';
-//     }
-// };
 
 const updateLoginStatus = () => {
     const isLoggedIn = !!localStorage.getItem('token'); 
